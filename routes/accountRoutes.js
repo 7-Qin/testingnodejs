@@ -77,6 +77,7 @@ module.exports = app => {
                 referalLink: `http://app.meme-crush.com/register?referralCode=${newReferralCode}`,
                 referalList: [],
                 twitterID: '',
+                twitterCredentials: [],
                 twitterInteractions: [],
                 lastAuthentication: Date.now(),
             });

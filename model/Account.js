@@ -33,6 +33,11 @@ const accountSchema = new Schema({
     
     // Twitter ID
     twitterID: String,
+
+    //User Credentials
+    //User Twitter ID
+    //User Twitter Username
+    twitterCredentials: Array,
     // Twitter interaction history
     twitterInteractions: Array,
 
