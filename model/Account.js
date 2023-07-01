@@ -12,15 +12,15 @@ const accountSchema = new Schema({
     //1到100关的关卡数字，100个数字，int Number
     //对应的关卡是否已经被解锁，bool IsLocked
     //对应的关卡获得过几颗星，int StarsCount
+    //对应的关卡获得的分数，int Number
     levelHistory: Array,
-    // starsEarnedPerLevel: [Number], // 新添加的字段
 
     pointRemain: Number,
     pointHistory: Array,
     pointsEarned: { type: Number, default: 0 },  // 新添加的字段
 
-    mccRemain: Number,
-    mccHistory: Array,
+    tokenRemain: Number,
+    tokenHistory: Array,
 
     bnbPaid: Number,
     bnbPaymentHistory: Array,
@@ -31,8 +31,10 @@ const accountSchema = new Schema({
     items: Array,
     itemshistory: Array,
     
-    //Twitter的ID
-    //Twitter的交互历史
+    // Twitter ID
+    twitterID: String,
+    // Twitter interaction history
+    twitterInteractions: Array,
 
     //referal system
     referalCode: String,
@@ -41,9 +43,6 @@ const accountSchema = new Schema({
     referralBonus: { type: Number, default: 0 },  // 新添加的字段
 
     lastAuthentication: Date,
-
-    
 });
-
 
 mongoose.model('accounts', accountSchema);
