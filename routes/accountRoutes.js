@@ -2,9 +2,6 @@ const { response } = require('express');
 const mongoose = require('mongoose');
 const Account = mongoose.model('accounts');
 
-const passport = require('passport');
-const TwitterStrategy = require('passport-twitter').Strategy;
-
 module.exports = app => {
 
     // Generate a 6 characters long random string that contains numbers and letters
@@ -222,26 +219,318 @@ module.exports = app => {
         res.send(response);
         return;
     });
+    
+    
+    
+    
+    
+    
 
-    passport.use(new TwitterStrategy({
-        consumerKey: 'ZoysK2Dch8fsvIDe1LMXCKpsS',
-        consumerSecret: 'omklKkKQGVKXiys4rLy6ihAYW7NfaraPqb9PN6ez0YVIxhVAbT',
-        callbackURL: "https://nodejs.meme-crush.com/auth/twitter/callback"
-      },
-      function(token, tokenSecret, profile, cb) {
-        // 在这里，您可以选择将用户的Twitter信息存储在数据库中
-        // 然后，您可以将用户的ID或其他唯一标识符传递给`cb`函数
-        cb(null, profile.id);
-      }
-    ));
 
-    app.get('/auth/twitter', passport.authenticate('twitter'));
 
-    app.get('/auth/twitter/callback', 
-      passport.authenticate('twitter', { failureRedirect: '/login' }),
-      function(req, res) {
-        // 如果成功，用户将被重定向到Unity应用
-        res.redirect('unity://yourgame/?user_id=' + req.user);
-      });
 
+    ////////////////////////////
+
+
+
+
+
+    // 升级账户信息：根据公钥查找，并且不能修改公钥
+    // 输入这一局游戏中所得到的point + 公钥
+    // 根据之前的pointRemain: Number，更新pointRemain: Number，就是之前的pointRemain: Number + 这一局游戏中所得到的point
+    // 并且将每一次更新过的pointRemain: Number存入pointHistory: Array中
+    // pointHistory: Array中需要记录目前为止所有的pointRemain: Number与对应的时间
+
+    // 在这段代码中，pointGained是这一局游戏中所获得的点数
+    // pointGained 可以是0或者负数
+    app.put('/account/updatePoint', async (req, res) => {
+        const { publicKey, pointGained } = req.body;
+        let response = {};
+    
+        try {
+            const account = await Account.findOne({ publicKey });
+    
+            if (!account) {
+                response = {
+                    code: 400,
+                    message: 'No account found with this public key.'
+                };
+                return res.status(400).send(response);
+            }
+    
+            account.pointRemain += pointGained;
+            account.pointHistory.push({point: account.pointRemain, date: Date.now()});
+    
+            await account.save();
+    
+            response = {
+                code: 200,
+                message: 'Account point updated successfully.',
+                data: account,
+            };
+        } catch (err) {
+            console.error(err);  // Log the error to console
+            response = {
+                code: 500,
+                message: 'Server error.',
+                data: err,
+            };
+        }
+    
+        res.send(response);
+        return;
+    });
+    
+    //根据公钥查找
+    //获得玩家现在mongoDB上的pointRemain: Number
+    app.get('/account/points', async (req, res) => {
+        const { publicKey } = req.query;
+        let response = {};
+    
+        try {
+            // 使用公钥查找账户
+            const account = await Account.findOne({ publicKey });
+    
+            if (!account) {
+                response = {
+                    code: 404,
+                    message: 'Account not found.',
+                    data: {}
+                };
+                return res.status(404).send(response);
+            }
+    
+            response = {
+                code: 200,
+                message: 'Account points retrieved successfully.',
+                data: {
+                    points: account.pointRemain
+                }
+            };
+            res.status(200).send(response);
+        } catch (err) {
+            console.error(err);
+            response = {
+                code: 500,
+                message: 'Server error.',
+                data: err,
+            };
+            res.status(500).send(response);
+        }
+    
+        return;
+    });
+
+    
+    
+    // 升级账户信息：根据公钥查找，并且不能修改公钥
+    // 这个游戏是GameFi游戏，所以有Token加密货币（MCC）的参与，这里的mccRemain: Number就是用户目前拥有的Token加密货币（MCC）的数量
+    // 根据之前的mccRemain: Number，更新mccRemain: Number，就是之前的mccRemain: Number + 用户刚刚充值进来的Token加密货币（MCC）
+    // 并且将每一次更新过的mccRemain: Number存入mccHistory: Array中
+    // mccHistory: Array中需要记录目前为止所有的mccRemain: Number与对应的时间
+
+    // mccGained是用户刚刚充值进来的Token加密货币（MCC）的数量，当区块链上的充值交易被确认后，就可以调用这个API
+    // mccGained 不可以是0或者负数
+    app.put('/account/updateMcc', async (req, res) => {
+        const { publicKey, mccGained } = req.body;
+        let response = {};
+    
+        if (mccGained <= 0) {
+            response = {
+                code: 400,
+                message: 'MCC gained must be greater than 0.',
+            };
+            return res.status(400).send(response);
+        }
+    
+        try {
+            const account = await Account.findOne({ publicKey });
+    
+            if (!account) {
+                response = {
+                    code: 400,
+                    message: 'No account found with this public key.',
+                };
+                return res.status(400).send(response);
+            }
+    
+            account.mccRemain += mccGained;
+            account.mccHistory.push({mcc: account.mccRemain, date: Date.now()});
+    
+            await account.save();
+    
+            response = {
+                code: 200,
+                message: 'Account MCC updated successfully.',
+                data: account,
+            };
+        } catch (err) {
+            console.error(err);  // Log the error to console
+            response = {
+                code: 500,
+                message: 'Server error.',
+                data: err,
+            };
+        }
+    
+        res.send(response);
+        return;
+    });
+    
+    // 升级账户信息：根据公钥查找，并且不能修改公钥
+    // 这个游戏是GameFi游戏，并且是部署在币安智能链上，所以会使用到BNB（币安智能链上的原生加密货币）支付
+    // 会有加密货币BNB的参与，这里的bnbPaid: Number就是用户目前所支付过的BNB的数量
+    // 根据之前的bnbPaid: Number，更新bnbPaid: Number，就是之前的bnbPaid: Number + 用户刚刚支付的BNB
+    // 并且将每一次更新过的bnbPaid: Number存入bnbPaymentHistory: Array中
+    // bnbPaymentHistory: Array中需要记录目前为止所有的bnbPaid: Number与对应的时间
+
+    // bnb是用户刚刚充值进来的Token加密货币（BNB）的数量，当区块链上的充值交易被确认后，就可以调用这个API
+    // bnb 不可以是0或者负数
+    app.put('/account/updateBnbPayment', async (req, res) => {
+        const { publicKey, bnb } = req.body;
+        let response = {};
+    
+        if (bnb <= 0) {
+            response = {
+                code: 400,
+                message: 'BNB paid must be greater than 0.',
+            };
+            return res.status(400).send(response);
+        }
+    
+        try {
+            const account = await Account.findOne({ publicKey });
+    
+            if (!account) {
+                response = {
+                    code: 400,
+                    message: 'No account found with this public key.',
+                };
+                return res.status(400).send(response);
+            }
+    
+            account.bnbPaid += bnb;
+            account.bnbPaymentHistory.push({bnbPaid: account.bnbPaid, date: Date.now()});
+    
+            await account.save();
+    
+            response = {
+                code: 200,
+                message: 'Account BNB payment updated successfully.',
+                data: account,
+            };
+        } catch (err) {
+            console.error(err);  // Log the error to console
+            response = {
+                code: 500,
+                message: 'Server error.',
+                data: err,
+            };
+        }
+    
+        res.send(response);
+        return;
+    });
+
+    // 升级账户信息：根据公钥查找，并且不能修改公钥
+    // Health是游戏中玩家的健康值，当玩家的健康值为0时，玩家将无法继续游戏
+    // 输入目前玩家得到的Health或者损失的Health + 公钥
+    // 根据之前的healthRemain: Number，更新healthRemain: Number，就是之前的healthRemain: Number + 玩家得到的Health或者损失的Health
+    // healthRemain可以为0，但是不可以为负数
+    // 并且将每一次更新过的healthRemain: Number存入healthHistory: Array中
+    // healthHistory: Array中需要记录目前为止所有的healthHistory: Number与对应的时间
+
+    // 在这段代码中，healthGained是玩家得到的Health或者损失的Health
+    // healthGained 可以是负数
+    app.put('/account/updateHealth', async (req, res) => {
+        const { publicKey, healthGained } = req.body;
+        let response = {};
+    
+        try {
+            const account = await Account.findOne({ publicKey });
+    
+            if (!account) {
+                response = {
+                    code: 400,
+                    message: 'No account found with this public key.',
+                };
+                return res.status(400).send(response);
+            }
+    
+            account.healthRemain += healthGained;
+            
+            // Ensure that healthRemain does not fall below 0
+            if (account.healthRemain < 0) {
+                account.healthRemain = 0;
+            }
+    
+            account.healthHistory.push({health: account.healthRemain, date: Date.now()});
+    
+            await account.save();
+    
+            response = {
+                code: 200,
+                message: 'Account health updated successfully.',
+                data: account,
+            };
+        } catch (err) {
+            console.error(err);  // Log the error to console
+            response = {
+                code: 500,
+                message: 'Server error.',
+                data: err,
+            };
+        }
+    
+        res.send(response);
+        return;
+    });
+
+    
+    // 升级账户信息：根据公钥查找，并且不能修改公钥
+    // items是游戏中玩家可以用到的游戏道具们，有很多很多种，并且每个玩家在进入不同的关卡后，道具的种类和对应的价格会发生变化
+    // 这段代码需要来根据输入的json数据，更新items: Array，来更新玩家的道具的种类和对应的价格
+
+    // 在这个API中，newItems 应该是一个数组，其中包含了玩家当前应该拥有的所有道具和他们的价格。
+    // newItems 可能类似于这样的数组：[{itemName: "sword", price: 100}, {itemName: "shield", price: 200}]。这个API将会用 newItems 替换 items 数组。
+
+    // 请注意，如果你想要只添加一项新的道具而不是替换整个数组，那么你需要对API进行一些修改，例如使用 account.items.push(newItem) 来添加新道具，而不是 account.items = newItems。
+
+    app.put('/account/updateItems', async (req, res) => {
+        const { publicKey, newItems } = req.body;
+        let response = {};
+    
+        try {
+            const account = await Account.findOne({ publicKey });
+    
+            if (!account) {
+                response = {
+                    code: 400,
+                    message: 'No account found with this public key.',
+                };
+                return res.status(400).send(response);
+            }
+    
+            account.items = newItems;
+    
+            await account.save();
+    
+            response = {
+                code: 200,
+                message: 'Account items updated successfully.',
+                data: account,
+            };
+        } catch (err) {
+            console.error(err);  // Log the error to console
+            response = {
+                code: 500,
+                message: 'Server error.',
+                data: err,
+            };
+        }
+    
+        res.send(response);
+        return;
+    });
+    
 }
