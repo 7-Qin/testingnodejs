@@ -31,21 +31,38 @@ const accountSchema = new Schema({
     items: Array,
     itemshistory: Array,
     
-    // Twitter ID
-    twitterID: String,
-
     //User Credentials
     //User Twitter ID
     //User Twitter Username
-    twitterCredentials: Array,
+    twitterCredentials: [{
+        oauthAccessToken: String,
+        oauthAccessTokenSecret: String,
+        twitterID: String,
+        twitterUsername: String,
+    }],
     // Twitter interaction history
     twitterInteractions: Array,
 
     //referal system
-    referalCode: String,
-    referalLink: String,
-    referalList: Array,
-    referralBonus: { type: Number, default: 0 },  // 新添加的字段
+    // The user who referred this user
+    referredBy: {
+        referrerId: String,
+        bonus: { type: Number, default: 0 },
+    },
+
+    // The users this user has referred
+    referralList: [{
+        referrerId: String,
+        bonus: { type: Number, default: 0 },
+        referralList: [{
+            referrerId: String,
+            bonus: { type: Number, default: 0 },
+            referralList: [{
+                referrerId: String,
+                bonus: { type: Number, default: 0 },
+            }],
+        }],
+    }],
 
     lastAuthentication: Date,
 });

@@ -3,16 +3,6 @@ const mongoose = require('mongoose');
 const Account = mongoose.model('accounts');
 
 module.exports = app => {
-
-    // Generate a 6 characters long random string that contains numbers and letters
-    function generateReferralCode() {
-        const possibleChars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-        let referralCode = '';
-        for (let i = 0; i < 6; i++) {
-            referralCode += possibleChars.charAt(Math.floor(Math.random() * possibleChars.length));
-        }
-        return referralCode;
-    }
     
     // 当用户打开游戏时
     // 如果用户已经有账户，返回账户信息
@@ -46,7 +36,7 @@ module.exports = app => {
             }
     
             // If it doesn't exist, create a new account
-            const newReferralCode = generateReferralCode();
+            // const newReferralCode = generateReferralCode();
     
             // Create levelHistory array
             let levelHistory = [];
@@ -73,10 +63,7 @@ module.exports = app => {
                 healthHistory: [],
                 items: [],
                 itemshistory: [],
-                referalCode: newReferralCode,
-                referalLink: `http://app.meme-crush.com/register?referralCode=${newReferralCode}`,
                 referalList: [],
-                twitterID: '',
                 twitterCredentials: [],
                 twitterInteractions: [],
                 lastAuthentication: Date.now(),
